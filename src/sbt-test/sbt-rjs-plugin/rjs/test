@@ -1,8 +1,12 @@
 # Optimize RequireJs files.
 
-> pipeline
-$ exists target/web/public/main/js/a.min.js
-$ exists target/web/public/main/js/a.js.map
--$ exists target/web/public/main/js/a.js
--$ exists target/web/public/main/js/b.js
+> web-stage
+$ exists target/web/stage/js/main.js
+$ exists target/web/stage/js/main.js.map
+$ exists target/web/stage/js/a.js
+$ exists target/web/stage/js/a.js.map
+$ exists target/web/stage/js/a.js.src.js
+$ exists target/web/stage/js/b.js
+$ exists target/web/stage/js/b.js.map
+$ exists target/web/stage/js/b.js.src.js
 

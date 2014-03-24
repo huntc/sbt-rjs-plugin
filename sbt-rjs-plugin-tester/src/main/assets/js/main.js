@@ -1,5 +1,16 @@
-/*global require */
+/*global alert, require, requirejs */
 
-require(["./b"], function(b) {
-    return b;
+requirejs.config({
+    paths: {
+        'underscore': '../lib/underscorejs/underscore'
+    },
+    shim: {
+        'underscore': {
+            exports: '_'
+        }
+    }
+});
+
+require(["./b", "underscore"], function (b, _) {
+    _.each([b], alert);
 });

@@ -1,5 +1,5 @@
 /*global define */
 
-define(["c"], function () {
+define(["./c"], function () {
     return 1;
 });

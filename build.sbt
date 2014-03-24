@@ -11,7 +11,7 @@ scalaVersion := "2.10.3"
 scalacOptions += "-feature"
 
 libraryDependencies ++= Seq(
-  "org.webjars" % "rjs" % "2.1.10"
+  "org.webjars" % "rjs" % "2.1.11-1-trireme"
 )
 
 resolvers ++= Seq(
