@@ -12,7 +12,8 @@ import java.util.regex.Pattern
 
 object SbtRjsPlugin extends AutoPlugin {
 
-  def select = SbtJsTaskPlugin
+  override def requires = SbtJsTaskPlugin
+  override def trigger = AllRequirements
 
   object RjsKeys {
     val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")

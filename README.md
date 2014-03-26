@@ -15,6 +15,12 @@ To use this plugin use the addSbtPlugin command within your project's `plugins.s
 
     addSbtPlugin("com.typesafe.sbt" % "sbt-rjs-plugin" % "1.0.0-SNAPSHOT")
 
+Your project's build file also needs to enable sbt-web plugins. For example with build.sbt:
+
+    import com.typesafe.sbt.web.SbtWebPlugin
+
+    lazy val root = project.in(file(".")).addPlugins(SbtWebPlugin)
+
 WebJars are treated specially. If a path is referenced that is part of a path belong to a Webjar then the `webjarCdn`
 setting is used to translate it to the CDN. This is all fully automatic and provided as part of a [buildWriter](http://www.ericfeminella.com/blog/2012/03/24/preprocessing-modules-with-requirejs-optimizer/)
 function. Furthermore if a `.bin` or `-bin` equivalent of the resource is available then it is used. The end result is
