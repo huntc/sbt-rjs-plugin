@@ -2,17 +2,17 @@ package com.typesafe.sbt.rjs
 
 import sbt._
 import sbt.Keys._
-import com.typesafe.sbt.web.SbtWebPlugin
+import com.typesafe.sbt.web.SbtWeb
 import com.typesafe.sbt.web.pipeline.Pipeline
-import com.typesafe.sbt.jse.{SbtJsEnginePlugin, SbtJsTaskPlugin}
+import com.typesafe.sbt.jse.{SbtJsEngine, SbtJsTask}
 import java.nio.charset.Charset
 import java.io.{BufferedReader, InputStreamReader}
 import org.webjars.WebJarAssetLocator
 import java.util.regex.Pattern
 
-object SbtRjsPlugin extends AutoPlugin {
+object SbtRjs extends AutoPlugin {
 
-  override def requires = SbtJsTaskPlugin
+  override def requires = SbtJsTask
   override def trigger = AllRequirements
 
   object RjsKeys {
@@ -24,10 +24,10 @@ object SbtRjsPlugin extends AutoPlugin {
   }
 
 
-  import SbtWebPlugin._
-  import SbtWebPlugin.WebKeys._
-  import SbtJsEnginePlugin.JsEngineKeys._
-  import SbtJsTaskPlugin.JsTaskKeys._
+  import SbtWeb._
+  import SbtWeb.WebKeys._
+  import SbtJsEngine.JsEngineKeys._
+  import SbtJsTask.JsTaskKeys._
   import RjsKeys._
 
   override def projectSettings = Seq(
@@ -45,7 +45,7 @@ object SbtRjsPlugin extends AutoPlugin {
   val Utf8 = Charset.forName("UTF-8")
 
   private def getResourceAsList(name: String): List[String] = {
-    val in = SbtRjsPlugin.getClass.getClassLoader.getResourceAsStream(name)
+    val in = SbtRjs.getClass.getClassLoader.getResourceAsStream(name)
     val reader = new BufferedReader(new InputStreamReader(in, Utf8))
     try {
       IO.readLines(reader)
@@ -122,7 +122,7 @@ object SbtRjsPlugin extends AutoPlugin {
         _ =>
           streams.value.log("Optimizing JavaScript with RequireJS")
 
-          SbtJsTaskPlugin.executeJs(
+          SbtJsTask.executeJs(
             state.value,
             (engineType in rjs).value,
             Nil,
