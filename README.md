@@ -1,7 +1,7 @@
-sbt-rjs-plugin
-==============
+sbt-rjs
+=======
 
-[![Build Status](https://api.travis-ci.org/sbt/sbt-rjs-plugin.png?branch=master)](https://travis-ci.org/sbt/sbt-rjs-plugin)
+[![Build Status](https://api.travis-ci.org/sbt/sbt-rjs.png?branch=master)](https://travis-ci.org/sbt/sbt-rjs)
 
 An SBT plugin to perform [RequireJs optimization](http://requirejs.org/docs/optimization.html).
 
@@ -13,7 +13,7 @@ To use this plugin use the addSbtPlugin command within your project's `plugins.s
         "Typesafe Snapshots Repository" at "http://repo.typesafe.com/typesafe/snapshots/"
         )
 
-    addSbtPlugin("com.typesafe.sbt" % "sbt-rjs-plugin" % "1.0.0-SNAPSHOT")
+    addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.0-SNAPSHOT")
 
 Your project's build file also needs to enable sbt-web plugins. For example with build.sbt:
 

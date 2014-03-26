@@ -2,7 +2,7 @@ sbtPlugin := true
 
 organization := "com.typesafe.sbt"
 
-name := "sbt-rjs-plugin"
+name := "sbt-rjs"
 
 version := "1.0.0-SNAPSHOT"
 
