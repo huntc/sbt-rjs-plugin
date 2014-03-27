@@ -10,10 +10,7 @@ import java.io.{BufferedReader, InputStreamReader}
 import org.webjars.WebJarAssetLocator
 import java.util.regex.Pattern
 
-object SbtRjs extends AutoPlugin {
-
-  override def requires = SbtJsTask
-  override def trigger = AllRequirements
+object Import {
 
   object RjsKeys {
     val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
@@ -23,12 +20,20 @@ object SbtRjs extends AutoPlugin {
     val webjarCdn = SettingKey[Option[String]]("rjs-webjar-cdn", "A CDN to be used for locating WebJars. By default jsdelivr is used.")
   }
 
+}
 
-  import SbtWeb._
-  import SbtWeb.WebKeys._
-  import SbtJsEngine.JsEngineKeys._
-  import SbtJsTask.JsTaskKeys._
-  import RjsKeys._
+object SbtRjs extends AutoPlugin {
+
+  override def requires = SbtJsTask
+
+  override def trigger = AllRequirements
+
+  val autoImport = Import
+
+  import SbtWeb.autoImport.WebKeys._
+  import SbtJsEngine.autoImport.JsEngineKeys._
+  import SbtJsTask.autoImport.JsTaskKeys._
+  import autoImport.RjsKeys._
 
   override def projectSettings = Seq(
     excludeFilter in rjs := HiddenFileFilter,
@@ -110,7 +115,7 @@ object SbtRjs extends AutoPlugin {
       val include = (includeFilter in rjs).value
       val exclude = (excludeFilter in rjs).value
       val optimizerMappings = mappings.filter(f => !f._1.isDirectory && include.accept(f._1) && !exclude.accept(f._1))
-      syncMappings(
+      SbtWeb.syncMappings(
         streams.value.cacheDirectory,
         optimizerMappings,
         appDir
