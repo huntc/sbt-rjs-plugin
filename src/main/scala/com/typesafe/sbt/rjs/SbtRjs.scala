@@ -30,7 +30,8 @@ object SbtRjs extends AutoPlugin {
 
   val autoImport = Import
 
-  import SbtWeb.autoImport.WebKeys._
+  import SbtWeb.autoImport._
+  import WebKeys._
   import SbtJsEngine.autoImport.JsEngineKeys._
   import SbtJsTask.autoImport.JsTaskKeys._
   import autoImport.RjsKeys._

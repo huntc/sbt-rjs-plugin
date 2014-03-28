@@ -17,9 +17,7 @@ To use this plugin use the addSbtPlugin command within your project's `plugins.s
 
 Your project's build file also needs to enable sbt-web plugins. For example with build.sbt:
 
-    import com.typesafe.sbt.web.SbtWeb
-
-    lazy val root = project.in(file(".")).addPlugins(SbtWeb)
+    lazy val root = (project in file(".")).addPlugins(SbtWeb)
 
 WebJars are treated specially. If a path is referenced that is part of a path belong to a Webjar then the `webjarCdn`
 setting is used to translate it to the CDN. This is all fully automatic and provided as part of a [buildWriter](http://www.ericfeminella.com/blog/2012/03/24/preprocessing-modules-with-requirejs-optimizer/)
