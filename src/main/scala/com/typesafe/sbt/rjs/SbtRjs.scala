@@ -15,6 +15,7 @@ object Import {
   object RjsKeys {
     val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
 
+    val baseUrl = SettingKey[String]("rjs-baseUrl", "The dir relative to the assets folder where js files are housed.")
     val paths = TaskKey[Seq[(String, String)]]("rjs-paths", "A sequence of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
     val projectBuildProfile = SettingKey[File]("rjs-project-profile", "The project build profile file. If it doesn't exist then a default one will be used.")
     val webjarCdn = SettingKey[Option[String]]("rjs-webjar-cdn", "A CDN to be used for locating WebJars. By default jsdelivr is used.")
@@ -37,6 +38,7 @@ object SbtRjs extends AutoPlugin {
   import autoImport.RjsKeys._
 
   override def projectSettings = Seq(
+    baseUrl := "js",
     excludeFilter in rjs := HiddenFileFilter,
     includeFilter in rjs := GlobFilter("*.js") | GlobFilter("*.css") | GlobFilter("*.map"),
     paths := getWebJarPaths.value,
@@ -105,6 +107,7 @@ object SbtRjs extends AutoPlugin {
         .to[Vector]
         .dropRight(1) :+ s"""}(
           "${appDir.getAbsolutePath}",
+          "${baseUrl.value}",
           "${dir.getAbsolutePath}",
           ${toJsonObj(webJarModuleIds.map(m => m -> "empty:"))},
           ${buildWriter.mkString("\n")}

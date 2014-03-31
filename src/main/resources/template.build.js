@@ -1,10 +1,10 @@
-(function (appDir, dir, paths, buildWriter) {
+(function (appDir, baseUrl, dir, paths, buildWriter) {
     return {
         appDir: appDir,
-        baseUrl: "js",
+        baseUrl: baseUrl,
         dir: dir,
         generateSourceMaps: true,
-        mainConfigFile: appDir + "/js/main.js",
+        mainConfigFile: appDir + "/" + baseUrl + "/main.js",
         modules: [
             {
                 name: "main"
@@ -15,4 +15,4 @@
         paths: paths,
         preserveLicenseComments: false
     }
-}(undefined, undefined, undefined, undefined))
+}(undefined, undefined, undefined, undefined, undefined))
