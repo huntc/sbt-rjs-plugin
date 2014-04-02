@@ -24,11 +24,11 @@ setting is used to translate it to the CDN. This is all fully automatic and prov
 function. Furthermore if a `.bin` or `-bin` equivalent of the resource is available then it is used. The end result is
 that all WebJar sourced resources are located via a CDN along with their minified versions.
 
-By default this plugin assumes "js" as the directory where JavaScript files are housed. This may be quickly
-overridden by using the following configuration:
+By default this plugin assumes "js" or "javascripts" as the directory where JavaScript files are housed, defaulting to "." if neither
+can be found. This may be quickly overridden by using the following configuration:
 
 ```scala
-RjsKeys.baseUrl := "javascripts"
+RjsKeys.baseUrl := Some("myjs")
 ```
 
 A standard build profile for the RequireJS optimizer is provided. However if you would prefer to provide your own

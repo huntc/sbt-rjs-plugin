@@ -15,7 +15,7 @@ object Import {
   object RjsKeys {
     val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
 
-    val baseUrl = SettingKey[String]("rjs-baseUrl", "The dir relative to the assets folder where js files are housed.")
+    val baseUrl = SettingKey[Option[String]]("rjs-baseUrl", """The dir relative to the assets folder where js files are housed. Will default to "js", "javascripts" or "." with the latter if the other two cannot be found.""")
     val paths = TaskKey[Seq[(String, String)]]("rjs-paths", "A sequence of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
     val projectBuildProfile = SettingKey[File]("rjs-project-profile", "The project build profile file. If it doesn't exist then a default one will be used.")
     val webjarCdn = SettingKey[Option[String]]("rjs-webjar-cdn", "A CDN to be used for locating WebJars. By default jsdelivr is used.")
@@ -38,7 +38,7 @@ object SbtRjs extends AutoPlugin {
   import autoImport.RjsKeys._
 
   override def projectSettings = Seq(
-    baseUrl := "js",
+    baseUrl := None,
     excludeFilter in rjs := HiddenFileFilter,
     includeFilter in rjs := GlobFilter("*.js") | GlobFilter("*.css") | GlobFilter("*.map"),
     paths := getWebJarPaths.value,
@@ -83,6 +83,16 @@ object SbtRjs extends AutoPlugin {
       val dir = appDir / "build"
 
 
+      val include = (includeFilter in rjs).value
+      val exclude = (excludeFilter in rjs).value
+      val optimizerMappings = mappings.filter(f => !f._1.isDirectory && include.accept(f._1) && !exclude.accept(f._1))
+      SbtWeb.syncMappings(
+        streams.value.cacheDirectory,
+        optimizerMappings,
+        appDir
+      )
+
+
       val templateBuildProfileContents =
         if (projectBuildProfile.value.exists()) {
           IO.readLines(projectBuildProfile.value, Utf8)
@@ -103,27 +113,26 @@ object SbtRjs extends AutoPlugin {
           )"""
 
 
+      val resolvedBaseUrl = baseUrl.value.getOrElse {
+        if ((appDir / "js").exists) {
+          "js"
+        } else if ((appDir / "javascripts").exists) {
+          "javascripts"
+        } else {
+          "."
+        }
+      }
       val appBuildProfileContents = templateBuildProfileContents
         .to[Vector]
         .dropRight(1) :+ s"""}(
           "${appDir.getAbsolutePath}",
-          "${baseUrl.value}",
+          "$resolvedBaseUrl",
           "${dir.getAbsolutePath}",
           ${toJsonObj(webJarModuleIds.map(m => m -> "empty:"))},
           ${buildWriter.mkString("\n")}
         )) """
       val appBuildProfile = (resourceManaged in rjs).value / "app.build.js"
       IO.writeLines(appBuildProfile, appBuildProfileContents, Utf8)
-
-
-      val include = (includeFilter in rjs).value
-      val exclude = (excludeFilter in rjs).value
-      val optimizerMappings = mappings.filter(f => !f._1.isDirectory && include.accept(f._1) && !exclude.accept(f._1))
-      SbtWeb.syncMappings(
-        streams.value.cacheDirectory,
-        optimizerMappings,
-        appDir
-      )
 
 
       val cacheDirectory = streams.value.cacheDirectory / rjs.key.label
