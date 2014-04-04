@@ -7,7 +7,7 @@ An SBT plugin to perform [RequireJs optimization](http://requirejs.org/docs/opti
 
 To use this plugin use the addSbtPlugin command within your project's `plugins.sbt` file:
 
-    addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.0-M2")
+    addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.0-M2a")
 
 Your project's build file also needs to enable sbt-web plugins. For example with build.sbt:
 
