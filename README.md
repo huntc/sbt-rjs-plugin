@@ -7,13 +7,7 @@ An SBT plugin to perform [RequireJs optimization](http://requirejs.org/docs/opti
 
 To use this plugin use the addSbtPlugin command within your project's `plugins.sbt` file:
 
-    resolvers ++= Seq(
-        Resolver.url("sbt snapshot plugins", url("http://repo.scala-sbt.org/scalasbt/sbt-plugin-snapshots"))(Resolver.ivyStylePatterns),
-        Resolver.sonatypeRepo("snapshots"),
-        "Typesafe Snapshots Repository" at "http://repo.typesafe.com/typesafe/snapshots/"
-        )
-
-    addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.0-SNAPSHOT")
+    addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.0-M2")
 
 Your project's build file also needs to enable sbt-web plugins. For example with build.sbt:
 
