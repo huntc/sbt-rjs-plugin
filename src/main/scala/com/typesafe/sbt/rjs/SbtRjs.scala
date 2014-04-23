@@ -157,12 +157,10 @@ object SbtRjs extends AutoPlugin {
       (mappings.toSet -- optimizerMappings.toSet ++ optimizedMappings).toSeq
   }
 
-  private def toJsonObj(entries: Seq[(String, String)]): String = {
-    entries.map {
-      entry =>
-        val (key, value) = entry
-        s""""$key":"$value" """
-    }.mkString("{", ",", "}")
-  }
+
+  private def toJsonObj(entries: Seq[(String, String)]): String = entries.map {
+    case (key, value) => s""""$key":"$value" """
+  }.mkString("{", ",", "}")
+
 
 }
