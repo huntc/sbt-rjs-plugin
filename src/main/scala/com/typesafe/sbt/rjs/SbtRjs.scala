@@ -101,8 +101,10 @@ object SbtRjs extends AutoPlugin {
         }
 
 
-      val webJarModuleIds = (webJars in Assets).value.filter(_.name.endsWith(".js")).map(f => f.name.dropRight(3))
-
+      val DotJS = ".js"
+      val webJarModuleIds = (webJars in Assets).value.collect {
+        case f if f.name.endsWith(DotJS) => f.name.dropRight(DotJS.length)
+      }
 
       val buildWriter = getResourceAsList("buildWriter.js")
         .to[Vector]
