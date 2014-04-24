@@ -16,7 +16,7 @@ object Import {
     val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
 
     val baseUrl = SettingKey[Option[String]]("rjs-baseUrl", """The dir relative to the assets folder where js files are housed. Will default to "js", "javascripts" or "." with the latter if the other two cannot be found.""")
-    val paths = TaskKey[Seq[(String, String)]]("rjs-paths", "A sequence of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
+    val paths = TaskKey[Set[(String, String)]]("rjs-paths", "A set of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
     val projectBuildProfile = SettingKey[File]("rjs-project-profile", "The project build profile file. If it doesn't exist then a default one will be used.")
     val webjarCdn = SettingKey[Option[String]]("rjs-webjar-cdn", "A CDN to be used for locating WebJars. By default jsdelivr is used.")
   }
@@ -62,7 +62,7 @@ object SbtRjs extends AutoPlugin {
     }
   }
 
-  private def getWebJarPaths: Def.Initialize[Task[Seq[(String, String)]]] = Def.task {
+  private def getWebJarPaths: Def.Initialize[Task[Set[(String, String)]]] = Def.task {
     import scala.collection.JavaConverters._
     webjarCdn.value match {
       case Some(cdn) =>
@@ -71,8 +71,8 @@ object SbtRjs extends AutoPlugin {
           entry =>
             val (module, version) = entry
             s"$module" -> s"$cdn/$module/$version"
-        }.toSeq
-      case _ => Nil
+        }.toSet
+      case _ => Set.empty
     }
   }
 
@@ -104,7 +104,7 @@ object SbtRjs extends AutoPlugin {
       val DotJS = ".js"
       val webJarModuleIds = (webJars in Assets).value.collect {
         case f if f.name.endsWith(DotJS) => f.name.dropRight(DotJS.length)
-      }
+      }.toSet
 
       val buildWriter = getResourceAsList("buildWriter.js")
         .to[Vector]
@@ -160,7 +160,7 @@ object SbtRjs extends AutoPlugin {
   }
 
 
-  private def toJsonObj(entries: Seq[(String, String)]): String = entries.map {
+  private def toJsonObj(entries: Set[(String, String)]): String = entries.map {
     case (key, value) => s""""$key":"$value" """
   }.mkString("{", ",", "}")
 
