@@ -145,6 +145,7 @@ object SbtRjs extends AutoPlugin {
           SbtJsTask.executeJs(
             state.value,
             (engineType in rjs).value,
+            (command in rjs).value,
             Nil,
             (webJarsNodeModulesDirectory in Plugin).value / "requirejs" / "bin" / "r.js",
             Seq("-o", appBuildProfile.getAbsolutePath),
