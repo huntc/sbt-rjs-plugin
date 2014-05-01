@@ -12,9 +12,9 @@ import java.util.regex.Pattern
 
 object Import {
 
-  object RjsKeys {
-    val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
+  val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
 
+  object RjsKeys {
     val baseUrl = SettingKey[Option[String]]("rjs-baseUrl", """The dir relative to the assets folder where js files are housed. Will default to "js", "javascripts" or "." with the latter if the other two cannot be found.""")
     val paths = TaskKey[Set[(String, String)]]("rjs-paths", "A set of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
     val projectBuildProfile = SettingKey[File]("rjs-project-profile", "The project build profile file. If it doesn't exist then a default one will be used.")
@@ -35,7 +35,8 @@ object SbtRjs extends AutoPlugin {
   import WebKeys._
   import SbtJsEngine.autoImport.JsEngineKeys._
   import SbtJsTask.autoImport.JsTaskKeys._
-  import autoImport.RjsKeys._
+  import autoImport._
+  import RjsKeys._
 
   override def projectSettings = Seq(
     baseUrl := None,
@@ -45,7 +46,6 @@ object SbtRjs extends AutoPlugin {
     projectBuildProfile := baseDirectory.value / "app.build.js",
     resourceManaged in rjs := webTarget.value / rjs.key.label,
     rjs := runOptimizer.dependsOn(webJarsNodeModules in Plugin).value,
-    pipelineStages <+= rjs,
     webjarCdn := Some("http://cdn.jsdelivr.net/webjars")
   )
 
