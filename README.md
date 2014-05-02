@@ -11,7 +11,7 @@ To use this plugin use the addSbtPlugin command within your project's `plugins.s
 
 Your project's build file also needs to enable sbt-web plugins. For example with build.sbt:
 
-    lazy val root = (project in file(".")).addPlugins(SbtWeb)
+    lazy val root = (project in file(".")).enablePlugins(SbtWeb)
 
 As with all sbt-web asset pipeline plugins you must declare their order of execution e.g.:
 
