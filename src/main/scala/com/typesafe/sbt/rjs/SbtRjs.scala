@@ -15,10 +15,19 @@ object Import {
   val rjs = TaskKey[Pipeline.Stage]("rjs", "Perform RequireJs optimization on the asset pipeline.")
 
   object RjsKeys {
-    val baseUrl = SettingKey[Option[String]]("rjs-baseUrl", """The dir relative to the assets folder where js files are housed. Will default to "js", "javascripts" or "." with the latter if the other two cannot be found.""")
+    val appBuildProfile = TaskKey[String]("rjs-app-build-profile", "The project build profile contents.")
+    val appDir = SettingKey[File]("rjs-app-dir", "The top level directory that contains your app js files.")
+    val buildWriter = TaskKey[String]("rjs-build-writer", "The project build writer JS that is responsible for writing out source files in rjs.")
+    val dir = SettingKey[File]("rjs-dir", "By default, all modules are located relative to this path.")
     val paths = TaskKey[Set[(String, String)]]("rjs-paths", "A set of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
-    val projectBuildProfile = SettingKey[File]("rjs-project-profile", "The project build profile file. If it doesn't exist then a default one will be used.")
     val webjarCdn = SettingKey[Option[String]]("rjs-webjar-cdn", "A CDN to be used for locating WebJars. By default jsdelivr is used.")
+    val webJarModuleIds = TaskKey[Set[String]]("rjs-webjar-module-ids", "A sequence of webjar module ids to be used.")
+  }
+
+  object RjsJson {
+    def toJsonObj(entries: Set[(String, String)]): String = entries.map {
+      case (key, value) => s""""$key":"$value" """
+    }.mkString("{", ",", "}")
   }
 
 }
@@ -39,18 +48,49 @@ object SbtRjs extends AutoPlugin {
   import RjsKeys._
 
   override def projectSettings = Seq(
-    baseUrl := None,
+    appBuildProfile := getAppBuildProfile.value,
+    appDir := (resourceManaged in rjs).value / "appdir",
+    buildWriter := getBuildWriter.value,
+    dir := appDir.value / "build",
     excludeFilter in rjs := HiddenFileFilter,
     includeFilter in rjs := GlobFilter("*.js") | GlobFilter("*.css") | GlobFilter("*.map"),
     paths := getWebJarPaths.value,
-    projectBuildProfile := baseDirectory.value / "app.build.js",
     resourceManaged in rjs := webTarget.value / rjs.key.label,
     rjs := runOptimizer.dependsOn(webJarsNodeModules in Plugin).value,
-    webjarCdn := Some("http://cdn.jsdelivr.net/webjars")
+    webjarCdn := Some("http://cdn.jsdelivr.net/webjars"),
+    webJarModuleIds := getWebJarModuleIds.value
   )
 
 
   val Utf8 = Charset.forName("UTF-8")
+
+  private def getAppBuildProfile: Def.Initialize[Task[String]] = Def.task {
+    s"""|({
+        |  appDir: "${appDir.value}",
+        |  baseUrl: "js",
+        |  dir: "${dir.value}",
+        |  generateSourceMaps: true,
+        |  mainConfigFile: "${appDir.value / "js" / "main.js"}",
+        |  modules: [{
+        |    name: "main"
+        |  }],
+        |  onBuildWrite: ${buildWriter.value},
+        |  optimize: "uglify2",
+        |  paths: ${RjsJson.toJsonObj(webJarModuleIds.value.map(m => m -> "empty:"))},
+        |  preserveLicenseComments: false
+        |})""".stripMargin
+  }
+
+  private def getBuildWriter: Def.Initialize[Task[String]] = Def.task {
+    val source = getResourceAsList("buildWriter.js")
+      .to[Vector]
+      .dropRight(1) :+ s"""})(
+          "${webModulesLib.value}/",
+          ${RjsJson.toJsonObj(paths.value)},
+          ${RjsJson.toJsonObj(webJarModuleIds.value.map(m => m -> m))}
+          )"""
+    source.mkString("\n")
+  }
 
   private def getResourceAsList(name: String): List[String] = {
     val in = SbtRjs.getClass.getClassLoader.getResourceAsStream(name)
@@ -60,6 +100,13 @@ object SbtRjs extends AutoPlugin {
     } finally {
       reader.close()
     }
+  }
+
+  private def getWebJarModuleIds: Def.Initialize[Task[Set[String]]] = Def.task {
+    val DotJS = ".js"
+    (webJars in Assets).value.collect {
+      case f if f.name.endsWith(DotJS) => f.name.dropRight(DotJS.length)
+    }.toSet
   }
 
   private def getWebJarPaths: Def.Initialize[Task[Set[(String, String)]]] = Def.task {
@@ -79,63 +126,17 @@ object SbtRjs extends AutoPlugin {
   private def runOptimizer: Def.Initialize[Task[Pipeline.Stage]] = Def.task {
     mappings =>
 
-      val appDir = (resourceManaged in rjs).value / "appdir"
-      val dir = appDir / "build"
-
-
       val include = (includeFilter in rjs).value
       val exclude = (excludeFilter in rjs).value
       val optimizerMappings = mappings.filter(f => !f._1.isDirectory && include.accept(f._1) && !exclude.accept(f._1))
       SbtWeb.syncMappings(
         streams.value.cacheDirectory,
         optimizerMappings,
-        appDir
+        appDir.value
       )
 
-
-      val templateBuildProfileContents =
-        if (projectBuildProfile.value.exists()) {
-          IO.readLines(projectBuildProfile.value, Utf8)
-        } else {
-          getResourceAsList("template.build.js")
-        }
-
-
-      val DotJS = ".js"
-      val webJarModuleIds = (webJars in Assets).value.collect {
-        case f if f.name.endsWith(DotJS) => f.name.dropRight(DotJS.length)
-      }.toSet
-
-      val buildWriter = getResourceAsList("buildWriter.js")
-        .to[Vector]
-        .dropRight(1) :+ s"""})(
-          "${webModulesLib.value}/",
-          ${toJsonObj(paths.value)},
-          ${toJsonObj(webJarModuleIds.map(m => m -> m))}
-          )"""
-
-
-      val resolvedBaseUrl = baseUrl.value.getOrElse {
-        if ((appDir / "js").exists) {
-          "js"
-        } else if ((appDir / "javascripts").exists) {
-          "javascripts"
-        } else {
-          "."
-        }
-      }
-      val appBuildProfileContents = templateBuildProfileContents
-        .to[Vector]
-        .dropRight(1) :+ s"""}(
-          "${appDir.getAbsolutePath}",
-          "$resolvedBaseUrl",
-          "${dir.getAbsolutePath}",
-          ${toJsonObj(webJarModuleIds.map(m => m -> "empty:"))},
-          ${buildWriter.mkString("\n")}
-        )) """
-      val appBuildProfile = (resourceManaged in rjs).value / "app.build.js"
-      IO.writeLines(appBuildProfile, appBuildProfileContents, Utf8)
-
+      val targetBuildProfileFile = (resourceManaged in rjs).value / "app.build.js"
+      IO.write(targetBuildProfileFile, appBuildProfile.value, Utf8)
 
       val cacheDirectory = streams.value.cacheDirectory / rjs.key.label
       val runUpdate = FileFunction.cached(cacheDirectory, FilesInfo.hash) {
@@ -148,22 +149,15 @@ object SbtRjs extends AutoPlugin {
             (command in rjs).value,
             Nil,
             (webJarsNodeModulesDirectory in Plugin).value / "requirejs" / "bin" / "r.js",
-            Seq("-o", appBuildProfile.getAbsolutePath),
+            Seq("-o", targetBuildProfileFile.getAbsolutePath),
             (timeoutPerSource in rjs).value * optimizerMappings.size
           )
 
-          appDir.***.get.toSet
+          appDir.value.***.get.toSet
       }
 
-      val dirStr = dir.getAbsolutePath
-      val optimizedMappings = runUpdate(Set(appDir)).filter(f => f.isFile && f.getAbsolutePath.startsWith(dirStr)).pair(relativeTo(dir))
+      val dirStr = dir.value.getAbsolutePath
+      val optimizedMappings = runUpdate(Set(appDir.value)).filter(f => f.isFile && f.getAbsolutePath.startsWith(dirStr)).pair(relativeTo(dir.value))
       (mappings.toSet -- optimizerMappings.toSet ++ optimizedMappings).toSeq
   }
-
-
-  private def toJsonObj(entries: Set[(String, String)]): String = entries.map {
-    case (key, value) => s""""$key":"$value" """
-  }.mkString("{", ",", "}")
-
-
 }
