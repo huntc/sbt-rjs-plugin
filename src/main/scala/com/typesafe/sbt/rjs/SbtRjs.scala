@@ -9,6 +9,7 @@ import java.nio.charset.Charset
 import java.io.{BufferedReader, InputStreamReader}
 import org.webjars.WebJarAssetLocator
 import java.util.regex.Pattern
+import org.jscala._
 
 object Import {
 
@@ -65,20 +66,22 @@ object SbtRjs extends AutoPlugin {
   val Utf8 = Charset.forName("UTF-8")
 
   private def getAppBuildProfile: Def.Initialize[Task[String]] = Def.task {
-    s"""|({
-        |  appDir: "${appDir.value}",
-        |  baseUrl: "js",
-        |  dir: "${dir.value}",
-        |  generateSourceMaps: true,
-        |  mainConfigFile: "${appDir.value / "js" / "main.js"}",
-        |  modules: [{
-        |    name: "main"
-        |  }],
-        |  onBuildWrite: ${buildWriter.value},
-        |  optimize: "uglify2",
-        |  paths: ${RjsJson.toJsonObj(webJarModuleIds.value.map(m => m -> "empty:"))},
-        |  preserveLicenseComments: false
-        |})""".stripMargin
+    javascript {
+      new {
+        val appDir = inject(RjsKeys.appDir.value.getPath)
+        val baseUrl = "js"
+        val dir = inject(RjsKeys.dir.value.getPath)
+        val generateSourceMaps = true
+        val mainConfigFile = inject((RjsKeys.appDir.value / "js" / "main.js").getPath)
+        val modules = Seq(new {
+          val name = "main"
+        })
+        val onBuildWrite = inject(buildWriter.value)
+        val optimize = "uglify2"
+        val paths = inject(webJarModuleIds.value.map(m => m -> "empty:").toMap)
+        val preserveLicenseComments = false
+      }
+    }.asString
   }
 
   private def getBuildWriter: Def.Initialize[Task[String]] = Def.task {
