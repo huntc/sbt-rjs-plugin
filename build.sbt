@@ -12,7 +12,7 @@ scalacOptions += "-feature"
 
 libraryDependencies ++= Seq(
   "org.webjars" % "rjs" % "2.1.11-1-trireme",
-  "org.jscala" %% "jscala-macros" % "0.3"
+  "org.jscala" %% "jscala-macros" % "0.4-SNAPSHOT"
 )
 
 resolvers ++= Seq(
