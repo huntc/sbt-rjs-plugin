@@ -20,7 +20,6 @@ object Import {
     val appDir = SettingKey[File]("rjs-app-dir", "The top level directory that contains your app js files.")
     val buildWriter = TaskKey[String]("rjs-build-writer", "The project build writer JS that is responsible for writing out source files in rjs.")
     val dir = SettingKey[File]("rjs-dir", "By default, all modules are located relative to this path.")
-    val jsAppBuildProfile = TaskKey[Map[String, JsExpr]]("rjs-js-app-build-profile", "The project build profile contents as a JavaScript Object expressed using a map.")
     val paths = TaskKey[Set[(String, String)]]("rjs-paths", "A set of RequireJS path mappings. By default all WebJar libraries are made available from a CDN and their mappings can be found here (unless the cdn is set to None).")
     val webjarCdn = SettingKey[Option[String]]("rjs-webjar-cdn", "A CDN to be used for locating WebJars. By default jsdelivr is used.")
     val webJarModuleIds = TaskKey[Set[String]]("rjs-webjar-module-ids", "A sequence of webjar module ids to be used.")
@@ -50,16 +49,11 @@ object SbtRjs extends AutoPlugin {
   import RjsKeys._
 
   override def projectSettings = Seq(
-    appBuildProfile := {
-      javascript {
-        inject(JsAnonObjDecl(jsAppBuildProfile.value.toList))
-      }.asString
-    },
+    appBuildProfile := getAppBuildProfile.value,
     appDir := (resourceManaged in rjs).value / "appdir",
     buildWriter := getBuildWriter.value,
     dir := appDir.value / "build",
     excludeFilter in rjs := HiddenFileFilter,
-    jsAppBuildProfile := getAppBuildProfile.value,
     includeFilter in rjs := GlobFilter("*.js") | GlobFilter("*.css") | GlobFilter("*.map"),
     paths := getWebJarPaths.value,
     resourceManaged in rjs := webTarget.value / rjs.key.label,
@@ -71,19 +65,22 @@ object SbtRjs extends AutoPlugin {
 
   val Utf8 = Charset.forName("UTF-8")
 
-  private def getAppBuildProfile: Def.Initialize[Task[Map[String, JsExpr]]] = Def.task {
-    Map(
-      "appDir" -> JsString(RjsKeys.appDir.value.getPath),
-      "baseUrl" -> JsString("js"),
-      "dir" -> JsString(RjsKeys.dir.value.getPath),
-      "generateSourceMaps" -> JsBool(value = true),
-      "mainConfigFile" -> JsString((RjsKeys.appDir.value / "js" / "main.js").getPath),
-      "modules" -> JsArray(List(JsAnonObjDecl(List("name" -> JsString("main"))))),
-      "onBuildWrite" -> JsRaw(buildWriter.value),
-      "optimize" -> JsString("uglify2"),
-      "paths" -> JsAnonObjDecl(webJarModuleIds.value.map(m => m -> JsString("empty:")).toList),
-      "preserveLicenseComments" -> JsBool(value = false)
-    )
+  private def getAppBuildProfile: Def.Initialize[Task[String]] = Def.task {
+    val webjars = webJarModuleIds.value.map(m => m -> "empty:").toMap
+    javascript {
+      new {
+        val appDir = inject(RjsKeys.appDir.value.getPath)
+        val baseUrl = "js"
+        val dir = inject(RjsKeys.dir.value.getPath)
+        val generateSourceMaps = true
+        val mainConfigFile = inject((RjsKeys.appDir.value / "js" / "main.js").getPath)
+        val modules = Seq(Map("name" -> "main"))
+        val onBuildWrite = inject(buildWriter.value)
+        val optimize = "uglify2"
+        val paths = inject(webjars)
+        val preserveLicenseComments = false
+      }
+    }.asString
   }
 
   private def getBuildWriter: Def.Initialize[Task[String]] = Def.task {
