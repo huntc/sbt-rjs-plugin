@@ -1,4 +1,5 @@
 import RjsKeys._
+import org.jscala._
 
 lazy val root = (project in file(".")).enablePlugins(SbtWeb)
 
@@ -11,17 +12,4 @@ libraryDependencies ++= Seq(
 
 pipelineStages := Seq(rjs)
 
-appBuildProfile := s"""|({
-                       |  appDir: "${appDir.value}",
-                       |  baseUrl: "js",
-                       |  dir: "${dir.value}",
-                       |  generateSourceMaps: true,
-                       |  mainConfigFile: "${appDir.value / "js" / "main.js"}",
-                       |  modules: [{
-                       |    name: "main"
-                       |  }],
-                       |  onBuildWrite: ${buildWriter.value},
-                       |  optimize: "uglify2",
-                       |  paths: ${RjsJson.toJsonObj(webJarModuleIds.value.map(m => m -> "empty:"))},
-                       |  preserveLicenseComments: false
-                       |})""".stripMargin
+jsAppBuildProfile := jsAppBuildProfile.value + ("baseUrl" -> JsString("javascripts"))
